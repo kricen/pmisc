@@ -1,0 +1,7 @@
+package: github.com/pmisc
+import:
+- package: github.com/prometheus/client_golang
+  version: ~0.9.0
+  subpackages:
+  - prometheus
+- package: github.com/toolkits/nux
