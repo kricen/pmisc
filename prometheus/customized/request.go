@@ -12,6 +12,11 @@ type RequestCollector struct {
 	rdMap       map[string][]int64
 }
 
+func NewRequestCollector() *RequestCollector {
+
+	return &RequestCollector{}
+}
+
 func (c *RequestCollector) Collect() (metrics []Metric, err error) {
 	c.globalMutex.Lock()
 	defer c.globalMutex.Unlock()

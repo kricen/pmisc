@@ -10,6 +10,10 @@ import (
 type DiskCollector struct {
 }
 
+func NewDiskCollector() *DiskCollector {
+	return &DiskCollector{}
+}
+
 func (c *DiskCollector) Collect() (metrics []Metric, err error) {
 	mountPoints, err := nux.ListMountPoint()
 	if err != nil {

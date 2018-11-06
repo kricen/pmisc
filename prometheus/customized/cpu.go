@@ -16,9 +16,10 @@ type CpuCollector struct {
 	ps *nux.ProcStat
 }
 
-// func NewCpuCollector() *CpuCollector {
-//
-// }
+func NewCpuCollector() *CpuCollector {
+
+	return &CpuCollector{}
+}
 
 func (c *CpuCollector) Collect() (metrics []Metric, err error) {
 	c.ps, err = nux.CurrentProcStat()

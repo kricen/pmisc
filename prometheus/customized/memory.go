@@ -10,6 +10,11 @@ import (
 type MemoryCollector struct {
 }
 
+func NewMemoryCollector() *MemoryCollector {
+
+	return &MemoryCollector{}
+}
+
 func (c *MemoryCollector) Collect() (metrics []Metric, err error) {
 
 	m, err := nux.MemInfo()
