@@ -4,6 +4,7 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/pmisc/lib"
 	"github.com/toolkits/nux"
 )
 
@@ -30,7 +31,7 @@ func (c *DiskCollector) Collect() (metrics []Metric, err error) {
 		if err != nil {
 			continue
 		}
-		metrics = append(metrics, Metric{Name: du.FsSpec, Value: du.BlocksUsedPercent, NameType: "filesystem", ValueType: reflect.Float64, MetricName: "node-filesystem-used"})
+		metrics = append(metrics, Metric{Name: du.FsSpec, Value: lib.Decimal(du.BlocksUsedPercent / 100), NameType: "filesystem", ValueType: reflect.Float64, MetricName: "node_filesystem_used"})
 	}
 
 	return

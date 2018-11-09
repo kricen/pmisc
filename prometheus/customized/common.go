@@ -10,19 +10,13 @@ var (
 	DefaultHostIP = "127.0.0.1"
 )
 
+// MetricName{Name:,Endpoint:,JobName:,HostName} Value
 type Metric struct {
-	Name       string       `json:"name"`
-	Value      interface{}  `json:"value"`
+	Name       string       `json:"name"`  // monitor metric
+	Value      interface{}  `json:"value"` //metric decimal value
 	NameType   string       `json:"name_type"`
-	ValueType  reflect.Kind `json:"value_type"`
-	MetricName string       `json:"metric_name"`
-	Alert      bool         `json:"alert"`
-}
-
-type MetricPack struct {
-	Endpoint string   `json:"instance"`
-	JobName  string   `json:"job"`
-	metrics  []Metric `json:"metrics"`
+	ValueType  reflect.Kind `json:"value_type"`  // metric value's type
+	MetricName string       `json:"metric_name"` // metric name
 }
 
 func init() {

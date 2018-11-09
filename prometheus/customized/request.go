@@ -24,12 +24,12 @@ func (c *RequestCollector) Collect() (metrics []Metric, err error) {
 		c.initMap()
 	}
 	for url, total := range c.rgMap {
-		metrics = append(metrics, Metric{Name: url, Value: total, NameType: "request-total", ValueType: reflect.Int64, MetricName: "job-request-total"})
+		metrics = append(metrics, Metric{Name: url, Value: total, NameType: "request_total", ValueType: reflect.Int64, MetricName: "job_request_total"})
 	}
 
 	for url, durations := range c.rdMap {
 		duration := averageDuration(durations)
-		metrics = append(metrics, Metric{Name: url, Value: duration, NameType: "request-duration", ValueType: reflect.Int64, MetricName: "job-request-duration"})
+		metrics = append(metrics, Metric{Name: url, Value: duration, NameType: "request_duration", ValueType: reflect.Int64, MetricName: "job_request_duration"})
 		c.rdMap[url] = make([]int64, 0)
 	}
 

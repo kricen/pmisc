@@ -1,0 +1,3 @@
+good_metric 3.14
+good1_metric 3.14
+good2_metric 3.14

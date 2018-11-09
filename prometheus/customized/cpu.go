@@ -1,7 +1,6 @@
 package customized
 
 import (
-	"log"
 	"reflect"
 
 	"github.com/pmisc/lib"
@@ -27,22 +26,21 @@ func (c *CpuCollector) Collect() (metrics []Metric, err error) {
 		return
 	}
 	idle := c.cpuIdle()
-	metrics = append(metrics, Metric{Name: "idle", Value: lib.Decimal(idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "busy", Value: lib.Decimal(1 - idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "user", Value: lib.Decimal(c.cpuUser()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "nice", Value: lib.Decimal(c.cpuNice()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "system", Value: lib.Decimal(c.cpuSystem()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "iowait", Value: lib.Decimal(c.cpuIowait()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "irq", Value: lib.Decimal(c.cpuIrq()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "softirq", Value: lib.Decimal(c.cpuSoftIrq()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "steal", Value: lib.Decimal(c.cpuSteal()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
-	metrics = append(metrics, Metric{Name: "guest", Value: lib.Decimal(c.cpuGuest()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node-cpu"})
+	metrics = append(metrics, Metric{Name: "idle", Value: lib.Decimal(idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "busy", Value: lib.Decimal(1 - idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "user", Value: lib.Decimal(c.cpuUser()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "nice", Value: lib.Decimal(c.cpuNice()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "system", Value: lib.Decimal(c.cpuSystem()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "iowait", Value: lib.Decimal(c.cpuIowait()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "irq", Value: lib.Decimal(c.cpuIrq()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "softirq", Value: lib.Decimal(c.cpuSoftIrq()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "steal", Value: lib.Decimal(c.cpuSteal()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "guest", Value: lib.Decimal(c.cpuGuest()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
 
 	return
 }
 
 func (c *CpuCollector) cpuIdle() float64 {
-	log.Println(c.ps.Cpu.Idle, c.ps.Cpu.Total)
 	return float64(c.ps.Cpu.Idle) / float64(c.ps.Cpu.Total)
 }
 
