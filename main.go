@@ -1,5 +1,7 @@
 package main
 
+// this main package aim at to help you how to use it
+
 import (
 	"fmt"
 	"time"

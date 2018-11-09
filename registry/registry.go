@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
+	"time"
 
 	"github.com/pmisc/lib"
 	"github.com/pmisc/prometheus/customized"
@@ -21,10 +23,16 @@ type CollectorRegister struct {
 	collectors []customized.ICollector
 }
 
-var DefaultHostIP string
+var (
+	DefaultHostIP string
+	errorLogger   *log.Logger
+)
 
 func init() {
 	DefaultHostIP = lib.ResolveHostIP()
+	errorLogger = log.New(os.Stdout,
+		"ERROR: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
@@ -96,6 +104,21 @@ func (cr *CollectorRegister) Push() error {
 		return errors.New(string(bs))
 	}
 	return nil
+}
+
+func (cr *CollectorRegister) cornTask() {
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				err := cr.Push()
+				if err != nil {
+					errorLogger.Println("something is wrrong,err reason:", err.Error())
+				}
+			}
+		}
+	}()
 }
 
 func (cr *CollectorRegister) ToString() string {
