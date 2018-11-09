@@ -2,6 +2,7 @@ package registry
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -78,7 +79,6 @@ func (cr *CollectorRegister) Push() error {
 		distinctMetrics[gatherName]++
 		ms += fmt.Sprintf("%s{label=\"%s\"} %+v\n", metric.MetricName, metric.Name, metric.Value)
 	}
-	fmt.Println(ms)
 	req, err := http.NewRequest("POST", reqURL, bytes.NewBufferString(ms))
 	if err != nil {
 		return err
@@ -92,8 +92,9 @@ func (cr *CollectorRegister) Push() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(bs))
-
+	if string(bs) != "" {
+		return errors.New(string(bs))
+	}
 	return nil
 }
 
