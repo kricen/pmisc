@@ -45,6 +45,7 @@ func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
 		hostname = DefaultHostIP
 	}
 	cr.HostName = hostname
+	cr.cornTask()
 	return cr
 }
 
@@ -108,7 +109,7 @@ func (cr *CollectorRegister) Push() error {
 
 func (cr *CollectorRegister) cornTask() {
 	go func() {
-		ticker := time.NewTicker(1 * time.Second)
+		ticker := time.NewTicker(2 * time.Second)
 		for {
 			select {
 			case <-ticker.C:

@@ -31,8 +31,8 @@ func main() {
 	}()
 
 	for i := 0; i < 10; i++ {
-		time.Sleep(1 * time.Second)
-		cr.Push()
+		time.Sleep(10 * time.Second)
+		// cr.Push()
 	}
 
 }
