@@ -152,3 +152,11 @@ func TestPost(t *testing.T) {
 	resp.Body.Close()
 
 }
+
+func TestUnix(t *testing.T) {
+	startAt := time.Now().UnixNano() / 1000 / 1000
+	time.Sleep(1 * time.Second)
+	endAt := time.Now().UnixNano() / 1000 / 1000
+	t.Log(endAt - startAt)
+
+}

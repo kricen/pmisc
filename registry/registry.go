@@ -16,11 +16,13 @@ import (
 )
 
 type CollectorRegister struct {
-	Endpoint   string
-	JobName    string
-	HostName   string
-	URL        string
-	collectors []customized.ICollector
+	Endpoint    string
+	JobName     string
+	HostName    string
+	URL         string
+	exit        chan int
+	failed_time int
+	collectors  []customized.ICollector
 }
 
 var (
@@ -45,7 +47,6 @@ func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
 		hostname = DefaultHostIP
 	}
 	cr.HostName = hostname
-	cr.cornTask()
 	return cr
 }
 
@@ -88,22 +89,35 @@ func (cr *CollectorRegister) Push() error {
 		distinctMetrics[gatherName]++
 		ms += fmt.Sprintf("%s{label=\"%s\"} %+v\n", metric.MetricName, metric.Name, metric.Value)
 	}
+	if cr.failed_time != 0 {
+		if cr.failed_time > 60 {
+			cr.failed_time = 60
+		}
+		time.Sleep(5 * time.Duration(cr.failed_time) * time.Second)
+	}
 	req, err := http.NewRequest("POST", reqURL, bytes.NewBufferString(ms))
 	if err != nil {
+		cr.failed_time++
+		errorLogger.Println(reqURL)
+
 		return err
 	}
 	resp, err := lib.HttpClient.Do(req)
 	if err != nil {
+		cr.failed_time++
+		errorLogger.Fatalln(reqURL)
 		return err
 	}
 	defer resp.Body.Close()
 	bs, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		cr.failed_time++
 		return err
 	}
 	if string(bs) != "" {
 		return errors.New(string(bs))
 	}
+	cr.failed_time = 0
 	return nil
 }
 
@@ -117,11 +131,29 @@ func (cr *CollectorRegister) cornTask() {
 				if err != nil {
 					errorLogger.Println("something is wrrong,err reason:", err.Error())
 				}
+			case <-cr.exit:
+				cr.exit = nil
+				return
 			}
 		}
 	}()
 }
 
+func (cr *CollectorRegister) Start() {
+	if cr.exit != nil {
+		return
+	}
+	cr.exit = make(chan int)
+	cr.cornTask()
+
+}
+
+func (cr *CollectorRegister) Exit() {
+	if cr.exit == nil {
+		return
+	}
+	cr.exit <- 1
+}
 func (cr *CollectorRegister) ToString() string {
 	return fmt.Sprintf("Endpoint:%s,JobName:%s,collectors size:%d", cr.Endpoint, cr.JobName, len(cr.collectors))
 }
