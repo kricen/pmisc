@@ -50,6 +50,16 @@ func (c *RequestCollector) AddRecord(url string, msDuration int64) {
 	c.rdMap[url] = append(c.rdMap[url], msDuration)
 
 }
+
+func (c *RequestCollector) initMap() {
+	if c.rdMap == nil {
+		c.rdMap = make(map[string][]int64, 0)
+	}
+	if c.rgMap == nil {
+		c.rgMap = make(map[string]int64, 0)
+	}
+}
+
 func averageDuration(durations []int64) (duration int64) {
 	if len(durations) == 0 {
 		return
@@ -59,13 +69,4 @@ func averageDuration(durations []int64) (duration int64) {
 	}
 	duration = duration / int64(len(durations))
 	return
-}
-
-func (c *RequestCollector) initMap() {
-	if c.rdMap == nil {
-		c.rdMap = make(map[string][]int64, 0)
-	}
-	if c.rgMap == nil {
-		c.rgMap = make(map[string]int64, 0)
-	}
 }

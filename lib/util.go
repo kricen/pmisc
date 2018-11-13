@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -33,11 +34,13 @@ func ResolveHostIP() string {
 	return ""
 }
 
+// Decimal : remain three significant digits lg: 3.1415926 to 3.14
 func Decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.3f", value), 64)
 	return value
 }
 
+// init common http client
 func initClient() {
 	trans := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -57,4 +60,12 @@ func initClient() {
 		Transport: trans,
 		Timeout:   3 * time.Second,
 	}
+}
+
+// ValidateEmailAddress : validata whether email address is illedge
+func ValidateEmailAddress(addr string) bool {
+	if m, _ := regexp.MatchString("^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+", addr); !m {
+		return false
+	}
+	return true
 }
