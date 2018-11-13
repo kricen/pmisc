@@ -17,7 +17,7 @@ func main() {
 	mc := customized.NewMemoryCollector()
 	rc := customized.NewRequestCollector()
 
-	cr := registry.NewCollectorRegister("monitor-helper-test", "http://47.104.62.159:9091")
+	cr := registry.NewCollectorRegister("monitor-helper-test", "http://localhost:9091")
 	cr.Registe(cc)
 	cr.Registe(dc)
 	cr.Registe(mc)

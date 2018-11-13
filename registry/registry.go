@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pmisc/lib"
+	"github.com/pmisc/prometheus/alarm"
 	"github.com/pmisc/prometheus/customized"
 )
 
@@ -154,6 +155,13 @@ func (cr *CollectorRegister) Exit() {
 	}
 	cr.exit <- 1
 }
+
+//RegisteAlarmManagement: registe alarm management, so that when metrics overhead threhods,system can send
+// alarm info to handlers
+func (cr *CollectorRegister) RegisteAlarmManagement(am alarm.AlarmManagement) {
+
+}
+
 func (cr *CollectorRegister) ToString() string {
 	return fmt.Sprintf("Endpoint:%s,JobName:%s,collectors size:%d", cr.Endpoint, cr.JobName, len(cr.collectors))
 }
