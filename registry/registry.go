@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/pmisc/lib"
-	"github.com/pmisc/prometheus/alarm"
 	"github.com/pmisc/prometheus/customized"
 )
 
+// CollectorRegister model
 type CollectorRegister struct {
 	Endpoint    string
 	JobName     string
@@ -38,6 +38,7 @@ func init() {
 		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
+// a func to initial a register of collectors
 func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
 	cr := &CollectorRegister{}
 	cr.JobName = jobname
@@ -51,6 +52,7 @@ func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
 	return cr
 }
 
+// registe collector
 func (cr *CollectorRegister) Registe(c customized.ICollector) {
 	// check whether has same collector
 	for _, tc := range cr.collectors {
@@ -74,6 +76,7 @@ func (cr *CollectorRegister) Collect() (metrics []customized.Metric) {
 	return
 }
 
+// Push : push metrics collected by collector to prometheus gateway
 func (cr *CollectorRegister) Push() error {
 	// package request url http://localhost:9091/metrics/job/%s/instance/%s
 	reqURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s/hostname/%s", cr.URL, cr.JobName, cr.Endpoint, cr.HostName)
@@ -122,6 +125,7 @@ func (cr *CollectorRegister) Push() error {
 	return nil
 }
 
+// it's corn job,collect metrics with a specific duration
 func (cr *CollectorRegister) cornTask() {
 	go func() {
 		ticker := time.NewTicker(2 * time.Second)
@@ -140,6 +144,7 @@ func (cr *CollectorRegister) cornTask() {
 	}()
 }
 
+// a func to start collect work
 func (cr *CollectorRegister) Start() {
 	if cr.exit != nil {
 		return
@@ -149,6 +154,7 @@ func (cr *CollectorRegister) Start() {
 
 }
 
+// Exit func ,release occupy resource
 func (cr *CollectorRegister) Exit() {
 	if cr.exit == nil {
 		return
@@ -156,12 +162,7 @@ func (cr *CollectorRegister) Exit() {
 	cr.exit <- 1
 }
 
-//RegisteAlarmManagement: registe alarm management, so that when metrics overhead threhods,system can send
-// alarm info to handlers
-func (cr *CollectorRegister) RegisteAlarmManagement(am alarm.AlarmManagement) {
-
-}
-
+// to string function
 func (cr *CollectorRegister) ToString() string {
 	return fmt.Sprintf("Endpoint:%s,JobName:%s,collectors size:%d", cr.Endpoint, cr.JobName, len(cr.collectors))
 }
