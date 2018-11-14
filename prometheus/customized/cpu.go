@@ -20,7 +20,7 @@ func NewCpuCollector() *CpuCollector {
 	return &CpuCollector{}
 }
 
-func (c *CpuCollector) Collect() (metrics []Metric, err error) {
+func (c *CpuCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) {
 	c.ps, err = nux.CurrentProcStat()
 	if err != nil {
 		return

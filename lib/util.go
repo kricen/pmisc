@@ -13,8 +13,32 @@ var (
 	HttpClient *http.Client
 )
 
+type JobQueue struct {
+	capacity int
+	datas    []interface{}
+}
+
 func init() {
 	initClient()
+}
+
+func NewJobQueue(capacity int) JobQueue {
+	datas := make([]interface{}, 0)
+	return JobQueue{capacity: capacity, datas: datas}
+}
+
+func (q *JobQueue) Push(data interface{}) interface{} {
+	q.datas = append(q.datas, data)
+	if len(q.datas) >= q.capacity {
+		tmp := q.datas[len(q.datas)-q.capacity]
+		q.datas = q.datas[len(q.datas)-q.capacity : len(q.datas)]
+		return tmp
+	}
+	return nil
+}
+
+func (q *JobQueue) AccessDatas() []interface{} {
+	return q.datas
 }
 
 //ResolveHostIp : a function to resolve localhost ip

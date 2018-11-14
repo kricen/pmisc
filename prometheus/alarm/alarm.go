@@ -67,3 +67,7 @@ func (am *AlarmManagement) SetJobName() *AlarmManagement {
 
 	return am
 }
+
+func SendAlarm(jobName, metricName, reason string) (err error) {
+
+}

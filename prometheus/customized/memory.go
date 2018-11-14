@@ -16,7 +16,7 @@ func NewMemoryCollector() *MemoryCollector {
 	return &MemoryCollector{}
 }
 
-func (c *MemoryCollector) Collect() (metrics []Metric, err error) {
+func (c *MemoryCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) {
 
 	m, err := nux.MemInfo()
 	if err != nil {

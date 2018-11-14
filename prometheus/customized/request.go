@@ -17,7 +17,7 @@ func NewRequestCollector() *RequestCollector {
 	return &RequestCollector{}
 }
 
-func (c *RequestCollector) Collect() (metrics []Metric, err error) {
+func (c *RequestCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) {
 	c.globalMutex.Lock()
 	defer c.globalMutex.Unlock()
 	if c.rgMap == nil || c.rdMap == nil {

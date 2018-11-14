@@ -17,13 +17,15 @@ import (
 
 // CollectorRegister model
 type CollectorRegister struct {
-	Endpoint    string
-	JobName     string
-	HostName    string
-	URL         string
-	exit        chan int
-	failed_time int
-	collectors  []customized.ICollector
+	Endpoint         string
+	JobName          string
+	HostName         string
+	URL              string
+	exit             chan int
+	failed_time      int
+	collectors       []customized.ICollector
+	metricGatewayURL string
+	metricAlarmURL   string
 }
 
 var (

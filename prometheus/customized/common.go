@@ -25,9 +25,18 @@ func init() {
 	if localhostIP != "" {
 		DefaultHostIP = localhostIP
 	}
+
 }
 
 type ICollector interface {
 	// collect metrics
-	Collect() ([]Metric, error)
+	Collect() ([]Metric, error, AlarmInfo)
+}
+
+type AlarmInfo struct {
+	JobName    string
+	HostIP     string
+	HostName   string
+	MetricName string
+	Reason     string
 }
