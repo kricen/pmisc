@@ -32,7 +32,7 @@ func (c *RequestCollector) Collect() (metrics []Metric, err error, ai AlarmInfo)
 		metrics = append(metrics, Metric{Name: url, Value: duration, NameType: "request_duration", ValueType: reflect.Int64, MetricName: "job_request_duration"})
 		c.rdMap[url] = make([]int64, 0)
 	}
-	metrics = append(metrics, Metric{Name: "instance", Value: 1, NameType: "service", ValueType: reflect.Int64, MetricName: "job-instance"})
+	metrics = append(metrics, Metric{Name: "instance", Value: 1, NameType: "service", ValueType: reflect.Int64, MetricName: "job_instance"})
 	return
 }
 

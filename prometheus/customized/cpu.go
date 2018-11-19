@@ -1,6 +1,7 @@
 package customized
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/pmisc/lib"
@@ -12,12 +13,13 @@ const (
 )
 
 type CpuCollector struct {
-	ps *nux.ProcStat
+	cpuRecord lib.JobQueue
+	ps        *nux.ProcStat
 }
 
 func NewCpuCollector() *CpuCollector {
-
-	return &CpuCollector{}
+	cr := lib.NewJobQueue(150)
+	return &CpuCollector{cpuRecord: cr}
 }
 
 func (c *CpuCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) {
@@ -26,8 +28,21 @@ func (c *CpuCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) {
 		return
 	}
 	idle := c.cpuIdle()
+	busy := lib.Decimal(1 - idle)
+	tmp := c.cpuRecord.Push(busy)
+	if tmp != nil {
+		var totalUsed float64
+		for _, v := range c.cpuRecord.AccessDatas() {
+			totalUsed += v.(float64)
+		}
+		averageUsed := lib.Decimal(totalUsed / float64(c.cpuRecord.AccessLen()))
+		if averageUsed >= 0.8 {
+			ai.MetricName = "cpu"
+			ai.Reason = fmt.Sprintf("cpu使用率超过阈值，近5分钟使用率:%f%s", averageUsed*100, "%")
+		}
+	}
 	metrics = append(metrics, Metric{Name: "idle", Value: lib.Decimal(idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
-	metrics = append(metrics, Metric{Name: "busy", Value: lib.Decimal(1 - idle), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+	metrics = append(metrics, Metric{Name: "busy", Value: busy, NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
 	metrics = append(metrics, Metric{Name: "user", Value: lib.Decimal(c.cpuUser()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
 	metrics = append(metrics, Metric{Name: "nice", Value: lib.Decimal(c.cpuNice()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
 	metrics = append(metrics, Metric{Name: "system", Value: lib.Decimal(c.cpuSystem()), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})

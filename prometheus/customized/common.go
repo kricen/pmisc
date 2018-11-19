@@ -39,4 +39,5 @@ type AlarmInfo struct {
 	HostName   string
 	MetricName string
 	Reason     string
+	Timestamp  int64
 }

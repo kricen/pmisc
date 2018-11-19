@@ -41,6 +41,10 @@ func (q *JobQueue) AccessDatas() []interface{} {
 	return q.datas
 }
 
+func (q *JobQueue) AccessLen() int {
+	return len(q.datas)
+}
+
 //ResolveHostIp : a function to resolve localhost ip
 func ResolveHostIP() string {
 	netInterfaceAddresses, err := net.InterfaceAddrs()

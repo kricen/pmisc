@@ -2,6 +2,8 @@ package registry
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +13,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/coreos/etcd/clientv3"
 	"github.com/pmisc/lib"
 	"github.com/pmisc/prometheus/customized"
 )
@@ -20,17 +23,21 @@ type CollectorRegister struct {
 	Endpoint         string
 	JobName          string
 	HostName         string
-	URL              string
+	ETCDURLs         []string
 	exit             chan int
 	failed_time      int
 	collectors       []customized.ICollector
 	metricGatewayURL string
 	metricAlarmURL   string
+	cli              *clientv3.Client
 }
 
 var (
 	DefaultHostIP string
 	errorLogger   *log.Logger
+	prefix        = "/cruise/"
+	CGW           = "/cruise/cgw"
+	AGW           = "/cruise/agw"
 )
 
 func init() {
@@ -41,17 +48,39 @@ func init() {
 }
 
 // a func to initial a register of collectors
-func NewCollectorRegister(jobname string, URL string) *CollectorRegister {
-	cr := &CollectorRegister{}
-	cr.JobName = jobname
-	cr.Endpoint = DefaultHostIP
-	cr.URL = URL
+func NewCollectorRegister(jobname string, ETCDURLs []string) (*CollectorRegister, error) {
+
+	// access hostname
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = DefaultHostIP
 	}
-	cr.HostName = hostname
-	return cr
+
+	// package register param
+	cr := &CollectorRegister{
+		JobName:  jobname,
+		Endpoint: DefaultHostIP,
+		ETCDURLs: ETCDURLs,
+		HostName: hostname,
+	}
+
+	//connect etcd
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:   ETCDURLs,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		// handle error!
+		return cr, err
+	}
+	cr.cli = cli
+	// connect etcd
+	cr.connEtcd()
+	//watch key
+	go func() {
+		cr.etcdWatchKey()
+	}()
+	return cr, nil
 }
 
 // registe collector
@@ -65,12 +94,16 @@ func (cr *CollectorRegister) Registe(c customized.ICollector) {
 	cr.collectors = append(cr.collectors, c)
 }
 
-func (cr *CollectorRegister) Collect() (metrics []customized.Metric) {
+func (cr *CollectorRegister) collect() (metrics []customized.Metric) {
 
 	for _, collector := range cr.collectors {
-		ms, err := collector.Collect()
+		ms, err, am := collector.Collect()
 		if err != nil {
 			continue
+		}
+		// TODO alarm moudle
+		if am.MetricName != "" {
+
 		}
 		metrics = append(metrics, ms...)
 	}
@@ -79,15 +112,17 @@ func (cr *CollectorRegister) Collect() (metrics []customized.Metric) {
 }
 
 // Push : push metrics collected by collector to prometheus gateway
-func (cr *CollectorRegister) Push() error {
+func (cr *CollectorRegister) push() error {
+	if cr.metricGatewayURL == "" {
+		return errors.New("push gateway is empty")
+	}
 	// package request url http://localhost:9091/metrics/job/%s/instance/%s
-	reqURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s/hostname/%s", cr.URL, cr.JobName, cr.Endpoint, cr.HostName)
-	metrics := cr.Collect()
+	reqURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s/hostname/%s", cr.metricGatewayURL, cr.JobName, cr.Endpoint, cr.HostName)
+	metrics := cr.collect()
 	var ms string
 	distinctMetrics := make(map[string]int, 0)
 	for _, metric := range metrics {
 		gatherName := fmt.Sprintf("%s%s", metric.MetricName, metric.Name)
-
 		count := distinctMetrics[gatherName]
 		if count > 0 {
 			continue
@@ -111,7 +146,7 @@ func (cr *CollectorRegister) Push() error {
 	resp, err := lib.HttpClient.Do(req)
 	if err != nil {
 		cr.failed_time++
-		errorLogger.Fatalln(reqURL)
+		errorLogger.Println(reqURL, err.Error())
 		return err
 	}
 	defer resp.Body.Close()
@@ -121,6 +156,8 @@ func (cr *CollectorRegister) Push() error {
 		return err
 	}
 	if string(bs) != "" {
+		cr.failed_time++
+		errorLogger.Println(ms)
 		return errors.New(string(bs))
 	}
 	cr.failed_time = 0
@@ -134,7 +171,7 @@ func (cr *CollectorRegister) cornTask() {
 		for {
 			select {
 			case <-ticker.C:
-				err := cr.Push()
+				err := cr.push()
 				if err != nil {
 					errorLogger.Println("something is wrrong,err reason:", err.Error())
 				}
@@ -167,4 +204,94 @@ func (cr *CollectorRegister) Exit() {
 // to string function
 func (cr *CollectorRegister) ToString() string {
 	return fmt.Sprintf("Endpoint:%s,JobName:%s,collectors size:%d", cr.Endpoint, cr.JobName, len(cr.collectors))
+}
+
+// to string function
+func (cr *CollectorRegister) SendAlarm(metricType, reason, alaryType string) error {
+	if cr.metricAlarmURL == "" {
+		return errors.New("alarm url is not init")
+	}
+	// package alarm parameters
+	am := customized.AlarmInfo{
+		JobName:    cr.JobName,
+		HostIP:     cr.Endpoint,
+		HostName:   cr.HostName,
+		MetricName: metricType,
+		Reason:     reason,
+		Timestamp:  time.Now().Unix()}
+
+	amBytes, err := json.Marshal(am)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", cr.metricAlarmURL, bytes.NewReader(amBytes))
+	if err != nil {
+		errorLogger.Fatalln(fmt.Sprintf("occur err when access a http request,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
+		return err
+	}
+	resp, err := lib.HttpClient.Do(req)
+	if err != nil {
+		errorLogger.Fatalln(fmt.Sprintf("occur err when exec client do,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func (cr *CollectorRegister) etcdWatchKey() {
+	for {
+		if cr.cli == nil {
+			cr.connEtcd()
+		} else {
+			break
+		}
+
+	}
+	ctx := context.TODO()
+	ch := cr.cli.Watch(ctx, prefix, clientv3.WithPrefix())
+	for {
+		select {
+		case c := <-ch:
+			for _, e := range c.Events {
+				fmt.Println("Watch", string(e.Kv.Key), string(e.Kv.Value))
+				if CGW == string(e.Kv.Key) {
+					cr.metricGatewayURL = string(e.Kv.Value)
+				} else if AGW == string(e.Kv.Key) {
+					cr.metricAlarmURL = string(e.Kv.Value)
+				}
+			}
+		}
+	}
+}
+
+func (cr *CollectorRegister) connEtcd() error {
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:   cr.ETCDURLs,
+		DialTimeout: 5 * time.Second,
+	})
+	if err != nil {
+		// handle error!
+		errorLogger.Println("connection etcd error,reason:", err.Error())
+		return err
+	}
+	ctx := context.TODO()
+	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	if err == nil {
+		errorLogger.Println("count:", resp.Count)
+		for i := 0; i < int(resp.Count); i++ {
+			fmt.Println("GET", string(resp.Kvs[i].Key), string(resp.Kvs[i].Value))
+			if CGW == string(resp.Kvs[i].Key) {
+				cr.metricGatewayURL = string(resp.Kvs[i].Value)
+			} else if AGW == string(resp.Kvs[i].Key) {
+				cr.metricAlarmURL = string(resp.Kvs[i].Value)
+			}
+		}
+
+	} else {
+		errorLogger.Println("connection etcd error,reason:", err.Error())
+	}
+	cr.cli = cli
+	return nil
 }
