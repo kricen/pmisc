@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
-	"github.com/pmisc/lib"
-	"github.com/pmisc/prometheus/customized"
+	"github.com/kricen/pmisc/lib"
+	"github.com/kricen/pmisc/prometheus/customized"
 )
 
 // CollectorRegister model

@@ -3,7 +3,7 @@ package customized
 import (
 	"reflect"
 
-	"github.com/pmisc/lib"
+	"github.com/kricen/pmisc/lib"
 )
 
 var (
