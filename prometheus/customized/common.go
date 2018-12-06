@@ -34,10 +34,14 @@ type ICollector interface {
 }
 
 type AlarmInfo struct {
-	JobName    string
-	HostIP     string
-	HostName   string
-	MetricName string
-	Reason     string
-	Timestamp  int64
+	JobName    string `json:"job_name"`
+	HostIP     string `json:"host_ip"`
+	HostName   string `json:"host_name"`
+	MetricName string `json:"metric_name"`
+	Reason     string `json:"reason"`
+	Timestamp  int64  `json:"timestamp"`
+	// has two type system  and global type ,default value is 'global'
+	// 'system' : hava maximum attemps,be constrained by alarm gateway
+	// 'global' : send alarm every time
+	Type string `json:"type"`
 }

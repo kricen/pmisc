@@ -59,7 +59,7 @@ func TestRegistry(t *testing.T) {
 
 	rc := customized.NewRequestCollector()
 
-	cr, _ := NewCollectorRegister("monitor-helper", []string{"url"})
+	cr := NewCollectorRegister("monitor-helper", []string{"url"})
 
 	cr.Registe(cc)
 	cr.Registe(dc)
@@ -117,7 +117,7 @@ func TestPost(t *testing.T) {
 
 func TestEtcd(t *testing.T) {
 	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"http://localhost:2379"},
+		Endpoints:   []string{"http://47.104.159.222:2379"},
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {
@@ -128,7 +128,7 @@ func TestEtcd(t *testing.T) {
 
 	ctx := context.TODO()
 
-	resp, err := cli.Get(ctx, "/key/", clientv3.WithPrefix())
+	resp, err := cli.Get(ctx, "/notify/job/helloword", clientv3.WithPrefix())
 	if err == nil {
 		fmt.Println(resp.Count)
 		for i := 0; i < int(resp.Count); i++ {

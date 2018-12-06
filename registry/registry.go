@@ -35,6 +35,7 @@ type CollectorRegister struct {
 var (
 	DefaultHostIP string
 	errorLogger   *log.Logger
+	infoLogger    *log.Logger
 	prefix        = "/cruise/"
 	CGW           = "/cruise/cgw"
 	AGW           = "/cruise/agw"
@@ -45,10 +46,13 @@ func init() {
 	errorLogger = log.New(os.Stdout,
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
+	infoLogger = log.New(os.Stdout,
+		"INFO: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
 }
 
 // a func to initial a register of collectors
-func NewCollectorRegister(jobname string, ETCDURLs []string) (*CollectorRegister, error) {
+func NewCollectorRegister(jobname string, ETCDURLs []string) *CollectorRegister {
 
 	// access hostname
 	hostname, err := os.Hostname()
@@ -64,23 +68,17 @@ func NewCollectorRegister(jobname string, ETCDURLs []string) (*CollectorRegister
 		HostName: hostname,
 	}
 
-	//connect etcd
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   ETCDURLs,
-		DialTimeout: 5 * time.Second,
-	})
-	if err != nil {
-		// handle error!
-		return cr, err
-	}
-	cr.cli = cli
 	// connect etcd
 	cr.connEtcd()
 	//watch key
 	go func() {
 		cr.etcdWatchKey()
 	}()
-	return cr, nil
+
+	cr.exit = make(chan int)
+	cr.cornTask()
+
+	return cr
 }
 
 // registe collector
@@ -103,7 +101,7 @@ func (cr *CollectorRegister) collect() (metrics []customized.Metric) {
 		}
 		// TODO alarm moudle
 		if am.MetricName != "" {
-
+			go cr.SendAlarm(am.MetricName, am.Reason, "system")
 		}
 		metrics = append(metrics, ms...)
 	}
@@ -183,16 +181,6 @@ func (cr *CollectorRegister) cornTask() {
 	}()
 }
 
-// a func to start collect work
-func (cr *CollectorRegister) Start() {
-	if cr.exit != nil {
-		return
-	}
-	cr.exit = make(chan int)
-	cr.cornTask()
-
-}
-
 // Exit func ,release occupy resource
 func (cr *CollectorRegister) Exit() {
 	if cr.exit == nil {
@@ -206,8 +194,13 @@ func (cr *CollectorRegister) ToString() string {
 	return fmt.Sprintf("Endpoint:%s,JobName:%s,collectors size:%d", cr.Endpoint, cr.JobName, len(cr.collectors))
 }
 
-// to string function
-func (cr *CollectorRegister) SendAlarm(metricType, reason, alaryType string) error {
+/**
+** metricType ,a filed to descript what metric is ,metric is set by user,can be 'cpu','memory' etc....,
+** alertType , alertType has two type  ‘system’  and ‘global’  ,default value is 'global'
+**** 'system' : hava maximum attemps,be constrained by alarm gateway
+**** 'global' : send alarm every time
+**/
+func (cr *CollectorRegister) SendAlarm(metricType, reason, alertType string) error {
 	if cr.metricAlarmURL == "" {
 		return errors.New("alarm url is not init")
 	}
@@ -244,10 +237,10 @@ func (cr *CollectorRegister) etcdWatchKey() {
 	for {
 		if cr.cli == nil {
 			cr.connEtcd()
+			time.Sleep(2 * time.Second)
 		} else {
 			break
 		}
-
 	}
 	ctx := context.TODO()
 	ch := cr.cli.Watch(ctx, prefix, clientv3.WithPrefix())
@@ -276,12 +269,12 @@ func (cr *CollectorRegister) connEtcd() error {
 		errorLogger.Println("connection etcd error,reason:", err.Error())
 		return err
 	}
+	infoLogger.Println("connected etcd sucessful")
 	ctx := context.TODO()
 	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
 	if err == nil {
-		errorLogger.Println("count:", resp.Count)
 		for i := 0; i < int(resp.Count); i++ {
-			fmt.Println("GET", string(resp.Kvs[i].Key), string(resp.Kvs[i].Value))
+			infoLogger.Println("GET", string(resp.Kvs[i].Key), string(resp.Kvs[i].Value))
 			if CGW == string(resp.Kvs[i].Key) {
 				cr.metricGatewayURL = string(resp.Kvs[i].Value)
 			} else if AGW == string(resp.Kvs[i].Key) {
