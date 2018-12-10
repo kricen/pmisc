@@ -17,17 +17,18 @@ func main() {
 	mc := customized.NewMemoryCollector()
 	rc := customized.NewRequestCollector()
 
-	cr := registry.NewCollectorRegister("monitor-helper-test", []string{"http://localhost:2379", "http://localhost1:2379"})
+	cr := registry.NewCollectorRegister("monitor-helper-test", []string{"http://47.104.159.222:2379", "http://47.104.3.204:2379"})
 	cr.Registe(cc)
 	cr.Registe(dc)
 	cr.Registe(mc)
 	cr.Registe(rc)
 	fmt.Println(cr.ToString())
-	// send alarm message
+	// 发送报警信息，
 	cr.SendAlarm("customized", "something is error", "global")
 	go func() {
 		for i := 0; i < 100; i++ {
 			time.Sleep(100 * time.Millisecond)
+			// add a request record with a specific
 			rc.AddRecord("getUserName", int64(i))
 		}
 	}()

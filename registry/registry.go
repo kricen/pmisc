@@ -220,12 +220,12 @@ func (cr *CollectorRegister) SendAlarm(metricType, reason, alertType string) err
 
 	req, err := http.NewRequest("POST", cr.metricAlarmURL, bytes.NewReader(amBytes))
 	if err != nil {
-		errorLogger.Fatalln(fmt.Sprintf("occur err when access a http request,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
+		errorLogger.Println(fmt.Sprintf("occur err when access a http request,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
 		return err
 	}
 	resp, err := lib.HttpClient.Do(req)
 	if err != nil {
-		errorLogger.Fatalln(fmt.Sprintf("occur err when exec client do,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
+		errorLogger.Println(fmt.Sprintf("occur err when exec client do,url is %s,reason is %s ", cr.metricAlarmURL, err.Error()))
 		return err
 	}
 	defer resp.Body.Close()
