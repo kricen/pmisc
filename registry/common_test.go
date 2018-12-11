@@ -59,7 +59,7 @@ func TestRegistry(t *testing.T) {
 
 	rc := customized.NewRequestCollector()
 
-	cr := NewCollectorRegister("monitor-helper", []string{"url"})
+	cr := NewCollectorRegister("monitor-helper", []string{"http://47.104.159.222:2379", "http://47.104.3.204:2379"})
 
 	cr.Registe(cc)
 	cr.Registe(dc)
@@ -68,22 +68,30 @@ func TestRegistry(t *testing.T) {
 
 	fmt.Println(cr.ToString())
 	go func() {
-		for i := 0; i < 100; i++ {
-			time.Sleep(100 * time.Millisecond)
-			rc.AddRecord("getUserName", int64(i))
+		for i := 0; i < 10000000; i++ {
+			go rc.AddRecord("getUserName", int64(i))
 		}
 	}()
 
-	for i := 0; i < 10; i++ {
-		time.Sleep(1 * time.Second)
-		cr.push()
-		metrics := cr.collect()
-		fmt.Printf("-------------info:%d---------------\n", i)
-		fmt.Printf("Endpoint:%s ,JobName:%s\n", cr.Endpoint, cr.JobName)
-		for _, metric := range metrics {
-			fmt.Println(metric.Name, metric.Value, metric.NameType, metric.ValueType, metric.MetricName)
+	go func() {
+		for i := 0; i < 10000000; i++ {
+			go func() {
+				cr.SendAlarm("hello", "bool", "global")
+			}()
 		}
-	}
+	}()
+	time.Sleep(100 * time.Second)
+
+	// for i := 0; i < 10; i++ {
+	// 	time.Sleep(1 * time.Second)
+	// 	cr.push()
+	// 	metrics := cr.collect()
+	// 	fmt.Printf("-------------info:%d---------------\n", i)
+	// 	fmt.Printf("Endpoint:%s ,JobName:%s\n", cr.Endpoint, cr.JobName)
+	// 	for _, metric := range metrics {
+	// 		fmt.Println(metric.Name, metric.Value, metric.NameType, metric.ValueType, metric.MetricName)
+	// 	}
+	// }
 
 }
 

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -30,6 +31,7 @@ type CollectorRegister struct {
 	metricGatewayURL string
 	metricAlarmURL   string
 	cli              *clientv3.Client
+	mutex            sync.Mutex
 }
 
 var (
@@ -83,6 +85,8 @@ func NewCollectorRegister(jobname string, ETCDURLs []string) *CollectorRegister 
 
 // registe collector
 func (cr *CollectorRegister) Registe(c customized.ICollector) {
+	cr.mutex.Lock()
+	defer cr.mutex.Unlock()
 	// check whether has same collector
 	for _, tc := range cr.collectors {
 		if reflect.TypeOf(tc) == reflect.TypeOf(c) {
@@ -93,7 +97,6 @@ func (cr *CollectorRegister) Registe(c customized.ICollector) {
 }
 
 func (cr *CollectorRegister) collect() (metrics []customized.Metric) {
-
 	for _, collector := range cr.collectors {
 		ms, err, am := collector.Collect()
 		if err != nil {
@@ -116,7 +119,9 @@ func (cr *CollectorRegister) push() error {
 	}
 	// package request url http://localhost:9091/metrics/job/%s/instance/%s
 	reqURL := fmt.Sprintf("%s/metrics/job/%s/instance/%s/hostname/%s", cr.metricGatewayURL, cr.JobName, cr.Endpoint, cr.HostName)
+	cr.mutex.Lock()
 	metrics := cr.collect()
+	cr.mutex.Unlock()
 	var ms string
 	distinctMetrics := make(map[string]int, 0)
 	for _, metric := range metrics {
