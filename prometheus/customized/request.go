@@ -7,7 +7,7 @@ import (
 )
 
 type RequestCollector struct {
-	globalMutex sync.RWMutex
+	globalMutex sync.Mutex
 	rgMap       map[string]int64 //request guage map
 	rdMap       map[string][]int64
 }

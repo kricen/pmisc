@@ -41,6 +41,14 @@ func (c *MemoryCollector) Collect() (metrics []Metric, err error, ai AlarmInfo) 
 			ai.Reason = fmt.Sprintf("内存使用率超过阈值，近5分钟使用率:%f%s", averageUsed*100, "%")
 		}
 	}
+	// access the resource usage about process
+	cpuUsage, memUsage, err := accesProcessUsage(processID)
+	if err == nil {
+		metrics = append(metrics, Metric{Name: "process_used", Value: cpuUsage / float64(100), NameType: "cpu", ValueType: reflect.Float64, MetricName: "node_cpu"})
+		//transfer percent to bytes
+		m := uint64(float64(m.MemTotal) * memUsage / 100.0)
+		metrics = append(metrics, Metric{Name: "process_used", Value: m, NameType: "memory", ValueType: reflect.Uint64, MetricName: "node_memory"})
+	}
 	metrics = append(metrics, Metric{Name: "used-percent", Value: usedPercent, NameType: "memory", ValueType: reflect.Uint64, MetricName: "node_memory"})
 	metrics = append(metrics, Metric{Name: "total", Value: m.MemTotal, NameType: "memory", ValueType: reflect.Uint64, MetricName: "node_memory"})
 	metrics = append(metrics, Metric{Name: "used", Value: memUsed, NameType: "memory", ValueType: reflect.Uint64, MetricName: "node_memory"})

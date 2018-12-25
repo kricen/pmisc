@@ -26,7 +26,7 @@ func main() {
 	// 发送报警信息，
 	cr.SendAlarm("customized", "something is error", "global")
 	go func() {
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 1000000; i++ {
 			time.Sleep(100 * time.Millisecond)
 			// add a request record with a specific
 			rc.AddRecord("getUserName", int64(i))
@@ -34,7 +34,7 @@ func main() {
 	}()
 
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(100 * time.Second)
 		// cr.Push()
 	}
 
